@@ -1,0 +1,55 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.venv/
+ENV/
+env/
+env.bak/
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+
+# IDE settings
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dll
+*.dylib
+*.pyd
+
+# Unit test / coverage reports
+.coverage
+*.cover
+*.py,cover
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# MyPy / Pylint
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pylint.d/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VS Code local settings
+.history/

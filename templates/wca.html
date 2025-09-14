@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Analyzer</title>
+    
+    <style>
+        :root {
+            --primary: #0ef;
+            --primary-dark: #158e9e;
+            --primary-light: #34dfeb;
+            --accent: #00E5FF;
+            --surface: #0F1419;
+            --surface-light: #1A2332;
+            --surface-card: #202836;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8B98A5;
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #30d6e2;
+            --error: #FF5252;
+            --warning: #FFC107;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--surface);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(37, 211, 102, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(37, 211, 102, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Container and Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: rgba(26, 35, 50, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            margin-top: 80px;
+            padding: 4rem 0;
+            text-align: center;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .creator-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            color: var(--primary-light);
+            animation: pulse 2s infinite;
+        }
+
+        /* Upload Section */
+        .upload-container {
+            background: var(--surface-card);
+            border: 2px dashed var(--primary);
+            border-radius: 1.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin: 2rem auto;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(37, 211, 102, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        .upload-container.drag-active {
+            border-color: var(--accent);
+            background: rgba(37, 211, 102, 0.05);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(37, 211, 102, 0.3);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .upload-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(37, 211, 102, 0.4);
+        }
+
+        .upload-button:active {
+            transform: translateY(0);
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(37, 211, 102, 0.1);
+            border-radius: 8px;
+            color: var(--primary-light);
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Analytics Section */
+        .analytics-section {
+            display: none;
+            margin-top: 3rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .analytics-section.show {
+            display: block;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Visualization Cards */
+        .viz-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .viz-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .viz-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .viz-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .viz-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: var(--surface-light);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .graph-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 10000;
+        }
+
+        .toast {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 300px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+
+        .toast-message {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 90;
+            padding: 1rem;
+            background: rgba(26, 35, 50, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            border: 1px solid var(--border);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .action-buttons.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+        }
+
+        .action-button.secondary {
+            background: var(--surface-card);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar-content {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .logo-icon {
+                width: 32px;
+                height: 32px;
+            }
+
+            .hero-section {
+                padding: 2rem 1rem;
+                margin-top: 60px;
+            }
+
+            .upload-container {
+                padding: 2rem 1rem;
+                margin: 1rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .metric-card {
+                padding: 1rem;
+            }
+
+            .metric-value {
+                font-size: 1.5rem;
+            }
+
+            .viz-card {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .toast-container {
+                bottom: 1rem;
+                right: 1rem;
+                left: 1rem;
+            }
+
+            .toast {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .action-buttons {
+                bottom: 1rem;
+                padding: 0.75rem;
+                width: calc(100% - 2rem);
+            }
+
+            .action-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 1.75rem;
+            }
+
+            .hero-subtitle {
+                font-size: 0.95rem;
+            }
+
+            .upload-icon {
+                font-size: 3rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .navbar,
+            .action-buttons,
+            .upload-container {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .viz-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus Styles */
+        button:focus-visible,
+        input:focus-visible,
+        label:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo">
+                <div class="logo-icon">❤</div>
+                <span>WhatsApp Analyzer</span>
+            </div>
+            <div class="creator-badge">
+                <span>✨</span>
+                <span>Created by Sohaib Haroon</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">WhatsApp Chat Analysis</h1>
+            <p class="hero-subtitle">
+                Unlock insights from your conversations with advanced data visualization and analytics
+            </p>
+        </section>
+
+        <!-- Upload Section -->
+        <div class="upload-container" id="dropZone">
+            <div class="upload-icon">📊</div>
+            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Upload Your Chat</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Drag & drop your WhatsApp chat export (.txt file) or click to browse
+            </p>
+            
+            <input type="file" id="chatFile" accept=".txt" hidden>
+            <label for="chatFile" class="upload-button" tabindex="0">
+                <span>📁</span>
+                <span>Choose File</span>
+            </label>
+            
+            <div class="file-info" id="fileInfo">
+                <strong>File Selected:</strong> <span id="fileName"></span>
+            </div>
+            
+            <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                Supported format: WhatsApp .txt export • Max size: 50MB
+            </p>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="analytics-section" id="analyticsResults">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid" id="metricsGrid"></div>
+
+            <!-- Visualizations -->
+            <div id="visualizations">
+                <!-- Monthly Timeline -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">📈</span>
+                        <h2 class="viz-title">Monthly Activity Timeline</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="timelineGraph" alt="Monthly Activity Timeline">
+                    </div>
+                </div>
+
+                <!-- Daily Timeline -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">📊</span>
+                        <h2 class="viz-title">Daily Activity Timeline</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="DtimelineGraph" alt="Daily Activity Timeline">
+                    </div>
+                </div>
+
+                <!-- Most Active Users -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">👥</span>
+                        <h2 class="viz-title">Most Active Users</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="activeUsersGraph" alt="Most Active Users">
+                    </div>
+                </div>
+
+                <!-- Most Active Day -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">📅</span>
+                        <h2 class="viz-title">Most Active Day</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="mad" alt="Most Active Day">
+                    </div>
+                </div>
+
+                <!-- Most Active Month -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">🗓️</span>
+                        <h2 class="viz-title">Most Active Month</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="mam" alt="Most Active Month">
+                    </div>
+                </div>
+
+                <!-- Most Common Words -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">💬</span>
+                        <h2 class="viz-title">Most Common Words</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="mcw" alt="Most Common Words">
+                    </div>
+                </div>
+
+                <!-- Word Cloud -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">☁️</span>
+                        <h2 class="viz-title">Word Cloud</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="wordCloud" alt="Word Cloud">
+                    </div>
+                </div>
+
+                <!-- Weekly Activity Heatmap -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">🔥</span>
+                        <h2 class="viz-title">Weekly Activity Heatmap</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="activityHeatmap" alt="Weekly Activity Heatmap">
+                    </div>
+                </div>
+
+                <!-- Top Emojis -->
+                <div class="viz-card">
+                    <div class="viz-header">
+                        <span style="font-size: 1.5rem;">😄</span>
+                        <h2 class="viz-title">Top Emojis</h2>
+                    </div>
+                    <div class="viz-content">
+                        <img class="graph-image" id="emojiGraph" alt="Top Emojis">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons" id="actionButtons">
+        <button class="action-button secondary" onclick="resetAnalysis()">
+            <span>🔄</span>
+            <span>New Analysis</span>
+        </button>
+        <button class="action-button" onclick="generatePDF()">
+            <span>📄</span>
+            <span>Export PDF</span>
+        </button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Analyzing your chat...</div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        // Global Variables
+        let currentFile = null;
+        let analysisData = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeEventListeners();
+        });
+
+        // Event Listeners
+        function initializeEventListeners() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('chatFile');
+
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Drag and drop events
+            dropZone.addEventListener('dragover', handleDragOver);
+            dropZone.addEventListener('dragleave', handleDragLeave);
+            dropZone.addEventListener('drop', handleDrop);
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Keyboard accessibility for upload button
+            document.querySelector('.upload-button').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInput.click();
+                }
+            });
+        }
+
+        // Prevent default behaviors
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Drag and drop handlers
+        function handleDragOver(e) {
+            document.getElementById('dropZone').classList.add('drag-active');
+        }
+
+        function handleDragLeave(e) {
+            document.getElementById('dropZone').classList.remove('drag-active');
+        }
+
+        function handleDrop(e) {
+            const dropZone = document.getElementById('dropZone');
+            dropZone.classList.remove('drag-active');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        // File selection handler
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        // Main file handler
+        async function handleFile(file) {
+            // Validate file
+            if (!validateFile(file)) {
+                return;
+            }
+
+            currentFile = file;
+            
+            // Show file info
+            showFileInfo(file);
+            
+            // Start analysis
+            await analyzeChat(file);
+        }
+
+        // File validation
+        function validateFile(file) {
+            // Check file type
+            if (!file.name.endsWith('.txt')) {
+                showToast('Please upload a .txt file', 'error');
+                return false;
+            }
+
+            // Check file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (file.size > maxSize) {
+                showToast('File size exceeds 50MB limit', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Show file info
+        function showFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            
+            fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            fileInfo.classList.add('show');
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Analyze chat
+        async function analyzeChat(file) {
+            showLoading(true);
+
+            const formData = new FormData();
+            formData.append('chat', file);
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                analysisData = data;
+                
+                renderAnalytics(data);
+                showToast('Analysis completed successfully! 🎉', 'success');
+                
+                // Show action buttons
+                document.getElementById('actionButtons').classList.add('show');
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showToast(`Analysis failed: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Render analytics
+        function renderAnalytics(data) {
+            // Show analytics section
+            document.getElementById('analyticsResults').classList.add('show');
+            
+            // Render metrics
+            renderMetrics(data);
+            
+            // Render visualizations
+            renderVisualizations(data);
+            
+            // Smooth scroll to results
+            setTimeout(() => {
+                document.getElementById('analyticsResults').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        // Render metrics
+        function renderMetrics(data) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            
+            const metrics = [
+                {
+                    icon: '💬',
+                    label: 'Total Messages',
+                    value: formatNumber(data.t_messages || 0)
+                },
+                {
+                    icon: '📝',
+                    label: 'Total Words',
+                    value: formatNumber(data.t_words || 0)
+                },
+                {
+                    icon: '📷',
+                    label: 'Media Shared',
+                    value: formatNumber(data.t_media || 0)
+                },
+                {
+                    icon: '🔗',
+                    label: 'Links Shared',
+                    value: formatNumber(data.t_links || 0)
+                }
+            ];
+            
+            metricsGrid.innerHTML = metrics.map(metric => `
+                <div class="metric-card">
+                    <div class="metric-icon">${metric.icon}</div>
+                    <div class="metric-label">${metric.label}</div>
+                    <div class="metric-value">${metric.value}</div>
+                </div>
+            `).join('');
+            
+            // Animate metrics
+            animateMetrics();
+        }
+
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // Animate metrics on render
+        function animateMetrics() {
+            const cards = document.querySelectorAll('.metric-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.animation = 'fadeInUp 0.5s ease forwards';
+                }, index * 100);
+            });
+        }
+
+        // Render visualizations
+        function renderVisualizations(data) {
+            const visualizations = [
+                { id: 'timelineGraph', key: 'MTL_Plot' },
+                { id: 'DtimelineGraph', key: 'DTL_Plot' },
+                { id: 'activeUsersGraph', key: 'b_graph' },
+                { id: 'mad', key: 'mad' },
+                { id: 'mam', key: 'mam' },
+                { id: 'mcw', key: 'mcw_plot' },
+                { id: 'wordCloud', key: 'wc_graph' },
+                { id: 'activityHeatmap', key: 'activity_heatmap' },
+                { id: 'emojiGraph', key: 'emoji_plot' }
+            ];
+            
+            visualizations.forEach(viz => {
+                const element = document.getElementById(viz.id);
+                if (element && data[viz.key]) {
+                    element.src = `data:image/png;base64,${data[viz.key]}`;
+                    element.onload = () => {
+                        element.style.animation = 'fadeIn 0.5s ease';
+                    };
+                }
+            });
+        }
+
+        // Reset analysis
+        function resetAnalysis() {
+            // Hide analytics section
+            document.getElementById('analyticsResults').classList.remove('show');
+            document.getElementById('actionButtons').classList.remove('show');
+            
+            // Clear file input
+            document.getElementById('chatFile').value = '';
+            document.getElementById('fileInfo').classList.remove('show');
+            
+            // Clear data
+            currentFile = null;
+            analysisData = null;
+            
+            // Scroll to top
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            
+            showToast('Ready for new analysis', 'success');
+        }
+
+        // Generate PDF
+        function generatePDF() {
+            if (!analysisData) {
+                showToast('No analysis data available', 'error');
+                return;
+            }
+            
+            showToast('Generating PDF...', 'warning');
+            
+            const element = document.getElementById('analyticsResults');
+            const opt = {
+                margin: [10, 10],
+                filename: `whatsapp-analysis-${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                }
+            };
+            
+            html2pdf().from(element).set(opt).save().then(() => {
+                showToast('PDF generated successfully! 📄', 'success');
+            }).catch(error => {
+                console.error('PDF generation error:', error);
+                showToast('Failed to generate PDF', 'error');
+            });
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.add('show');
+            } else {
+                overlay.classList.remove('show');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            // Set icon based on type
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message}</span>
+            `;
+            
+            // Add to container
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Handle errors globally
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e);
+            showToast('An unexpected error occurred', 'error');
+        });
+
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e);
+            showToast('An unexpected error occurred', 'error');
+        });
+
+        // Service worker for offline support (optional)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.log('Service worker registration failed:', err);
+            });
+        }
+
+        // Smooth scroll behavior for all internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + O to open file dialog
+            if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                e.preventDefault();
+                document.getElementById('chatFile').click();
+            }
+            
+            // Ctrl/Cmd + P to generate PDF
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p' && analysisData) {
+                e.preventDefault();
+                generatePDF();
+            }
+            
+            // Escape to reset
+            if (e.key === 'Escape' && analysisData) {
+                resetAnalysis();
+            }
+        });
+
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Listen for theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (e.matches) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        });
+    </script>
+</body>
+</html>
